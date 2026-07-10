@@ -1,0 +1,65 @@
+name: Build Ephemera review preview
+
+on:
+  push:
+    branches:
+      - ephemera-review
+    paths:
+      - .ephemera-source/**
+      - .github/workflows/ephemera-preview.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ephemera-review-preview
+  cancel-in-progress: true
+
+jobs:
+  build-preview:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out review branch
+        uses: actions/checkout@v4
+        with:
+          ref: ephemera-review
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Reconstruct and verify source archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/ephemera-source
+          cat .ephemera-source/part-*.txt | tr -d '\r\n' | base64 --decode > /tmp/ephemera-source.tar.xz
+          echo "83fc210ef0b8d97d4d60e6c2e0aac8bf3750ea8dc739da4376c75de37a665004  /tmp/ephemera-source.tar.xz" | sha256sum --check --strict
+          tar -xJf /tmp/ephemera-source.tar.xz -C /tmp/ephemera-source
+
+      - name: Install, test, verify, and build
+        working-directory: /tmp/ephemera-source/ephemera-chat
+        run: |
+          set -euo pipefail
+          npm ci
+          npm run check
+
+      - name: Publish static review files to branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf ephemera-preview
+          mkdir -p ephemera-preview
+          cp -R /tmp/ephemera-source/ephemera-chat/dist/. ephemera-preview/
+          touch ephemera-preview/.nojekyll
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A ephemera-preview
+          if git diff --cached --quiet; then
+            echo "Preview is already current."
+          else
+            git commit -m "Build Ephemera review preview"
+            git push origin HEAD:ephemera-review
+          fi
