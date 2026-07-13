@@ -16,7 +16,7 @@
   </style>
 </head>
 <body>
-  <div id="root"><div class="boot">Opening the room…</div></div>
+  <div id="root"><div class="boot">Opening Ephemera…</div></div>
   <script src="./payload-css-00.js"></script>
   <script src="./payload-js-00.js"></script>
   <script src="./payload-js-01.js"></script>
@@ -29,23 +29,61 @@
   <script src="./payload-js-08.js"></script>
   <script src="./payload-js-09.js"></script>
   <script src="./payload-js-10.js"></script>
+  <script src="./payload-js-11.js"></script>
+  <script src="./payload-js-tail-00.js"></script>
+  <script src="./payload-js-tail-01.js"></script>
+  <script src="./payload-js-tail-02.js"></script>
+  <script src="./payload-js-tail-03.js"></script>
+  <script src="./payload-js-tail-04.js"></script>
+  <script src="./payload-js-tail-05.js"></script>
+  <script src="./payload-js-tail-06.js"></script>
+  <script src="./payload-js-tail-07.js"></script>
+  <script src="./payload-js-tail-08.js"></script>
+  <script src="./payload-js-tail-09.js"></script>
+  <script src="./payload-js-tail-10.js"></script>
+  <script src="./payload-js-tail-11.js"></script>
+  <script src="./payload-js-tail-12.js"></script>
+  <script src="./payload-js-tail-13.js"></script>
+  <script src="./payload-js-tail-14-00.js"></script>
+  <script src="./payload-js-tail-14-01-00.js"></script>
+  <script src="./payload-js-tail-14-01-01.js"></script>
+  <script src="./payload-js-tail-15-00-00.js"></script>
+  <script src="./payload-js-tail-15-00-01-00.js"></script>
+  <script src="./payload-js-tail-15-00-01-01.js"></script>
+  <script src="./payload-js-tail-15-01-00-00.js"></script>
+  <script src="./payload-js-tail-15-01-00-01.js"></script>
+  <script src="./payload-js-tail-15-01-01-00.js"></script>
+  <script src="./payload-js-tail-15-01-01-01.js"></script>
+  <script src="./payload-js-tail-16-00.js"></script>
   <script>
   (() => {
-    const unpack = async parts => {
+    const EXPECTED_JS_PAYLOAD_LENGTH = 124096;
+    const unpack = async (parts, expectedLength) => {
       const payload = parts.join('');
+      if (expectedLength && payload.length !== expectedLength) {
+        throw new Error(`The deployed app bundle is incomplete (${payload.length}/${expectedLength} characters).`);
+      }
       const bytes = Uint8Array.from(atob(payload), character => character.charCodeAt(0));
-      if (!('DecompressionStream' in window)) throw new Error('This browser does not support DecompressionStream. Use a current Chrome, Edge, Firefox, or Safari release.');
+      if (!('DecompressionStream' in window)) {
+        throw new Error('This browser does not support DecompressionStream. Use a current Chrome, Edge, Firefox, or Safari release.');
+      }
       const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
       return new Response(stream).text();
     };
-    Promise.all([unpack(window.__EPH_CSS || []), unpack(window.__EPH_JS || [])]).then(([css, source]) => {
+
+    Promise.all([
+      unpack(window.__EPH_CSS || []),
+      unpack(window.__EPH_JS || [], EXPECTED_JS_PAYLOAD_LENGTH)
+    ]).then(([css, source]) => {
       const style = document.createElement('style');
       style.textContent = css;
       document.head.appendChild(style);
+
       const script = document.createElement('script');
       script.type = 'module';
       script.textContent = source;
       document.body.appendChild(script);
+
       delete window.__EPH_CSS;
       delete window.__EPH_JS;
     }).catch(error => {
