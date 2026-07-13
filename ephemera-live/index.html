@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#090b12" />
+  <meta name="description" content="Ephemera is an anonymous, browser-to-browser chat with no message history." />
+  <meta name="referrer" content="no-referrer" />
+  <meta name="robots" content="noindex, nofollow, noarchive" />
+  <title>Ephemera — temporary browser chat</title>
+  <style>
+    html,body,#root{min-height:100%;margin:0;background:#090b12;color:#f6f7fb}
+    .boot{min-height:100vh;display:grid;place-items:center;font:500 15px system-ui,sans-serif;color:#a5aabd}
+    .boot-error{max-width:44rem;padding:2rem;line-height:1.55}
+    .boot-error strong{display:block;color:#fff;font-size:1.2rem;margin-bottom:.5rem}
+  </style>
+</head>
+<body>
+  <div id="root"><div class="boot">Opening the room…</div></div>
+  <script src="./payload-css-00.js"></script>
+  <script src="./payload-js-00.js"></script>
+  <script src="./payload-js-01.js"></script>
+  <script src="./payload-js-02.js"></script>
+  <script src="./payload-js-03.js"></script>
+  <script src="./payload-js-04.js"></script>
+  <script src="./payload-js-05.js"></script>
+  <script src="./payload-js-06.js"></script>
+  <script src="./payload-js-07.js"></script>
+  <script src="./payload-js-08.js"></script>
+  <script src="./payload-js-09.js"></script>
+  <script src="./payload-js-10.js"></script>
+  <script>
+  (() => {
+    const unpack = async parts => {
+      const payload = parts.join('');
+      const bytes = Uint8Array.from(atob(payload), character => character.charCodeAt(0));
+      if (!('DecompressionStream' in window)) throw new Error('This browser does not support DecompressionStream. Use a current Chrome, Edge, Firefox, or Safari release.');
+      const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
+      return new Response(stream).text();
+    };
+    Promise.all([unpack(window.__EPH_CSS || []), unpack(window.__EPH_JS || [])]).then(([css, source]) => {
+      const style = document.createElement('style');
+      style.textContent = css;
+      document.head.appendChild(style);
+      const script = document.createElement('script');
+      script.type = 'module';
+      script.textContent = source;
+      document.body.appendChild(script);
+      delete window.__EPH_CSS;
+      delete window.__EPH_JS;
+    }).catch(error => {
+      const root = document.getElementById('root');
+      root.innerHTML = '<div class="boot boot-error"><div><strong>Ephemera could not start.</strong><span></span></div></div>';
+      root.querySelector('span').textContent = error instanceof Error ? error.message : String(error);
+      console.error(error);
+    });
+  })();
+  </script>
+</body>
+</html>
