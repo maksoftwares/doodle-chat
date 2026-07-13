@@ -29,24 +29,28 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
+          cache-dependency-path: /tmp/ephemera-source/ephemera-chat/package-lock.json
 
       - name: Reconstruct and verify source archive
         shell: bash
         run: |
           set -euo pipefail
+          rm -rf /tmp/ephemera-source
           mkdir -p /tmp/ephemera-source
           cat .ephemera-source/part-*.txt | tr -d '\r\n' | base64 --decode > /tmp/ephemera-source.tar.xz
           echo "83fc210ef0b8d97d4d60e6c2e0aac8bf3750ea8dc739da4376c75de37a665004  /tmp/ephemera-source.tar.xz" | sha256sum --check --strict
           tar -xJf /tmp/ephemera-source.tar.xz -C /tmp/ephemera-source
 
-      - name: Install, test, verify, and build
+      - name: Install dependencies
         working-directory: /tmp/ephemera-source/ephemera-chat
-        run: |
-          set -euo pipefail
-          npm ci
-          npm run check
+        run: npm ci
 
-      - name: Publish static review files to branch
+      - name: Test, verify, and build
+        working-directory: /tmp/ephemera-source/ephemera-chat
+        run: npm run check
+
+      - name: Publish complete static review build
         shell: bash
         run: |
           set -euo pipefail
@@ -60,6 +64,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "Preview is already current."
           else
-            git commit -m "Build Ephemera live review preview"
+            git commit -m "Publish complete Ephemera review build"
             git push origin HEAD:ephemera-review
           fi
