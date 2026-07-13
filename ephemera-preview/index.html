@@ -1,76 +1,566 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<meta name="theme-color" content="#090b12" />
-<meta name="description" content="Ephemera is an anonymous, browser-to-browser chat with no message history." />
-<meta name="referrer" content="no-referrer" />
-<meta name="robots" content="noindex, nofollow, noarchive" />
-<title>Ephemera — temporary browser chat</title>
-<style>
-html,body{margin:0;min-height:100%;background:#090b12;color:#f6f7fb;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-#preview-status{display:grid;min-height:100vh;place-items:center;padding:24px;box-sizing:border-box;text-align:center}
-#preview-status>div{max-width:560px}
-#preview-status strong{display:block;font-size:20px;margin-bottom:8px}
-#preview-status p{margin:0;color:#a8adbd;line-height:1.6}
-</style>
-</head>
-<body>
-<div id="root"><div id="preview-status"><div><strong>Loading Ephemera…</strong><p>Preparing the review build.</p></div></div></div>
-<script src="./payload-css-00.js"></script>
-<script src="./payload-js-00.js"></script>
-<script src="./payload-js-01.js"></script>
-<script src="./payload-js-02.js"></script>
-<script src="./payload-js-03.js"></script>
-<script src="./payload-js-04.js"></script>
-<script>
-(async () => {
-  const showError = (message) => {
-    const root = document.getElementById('root');
-    if (!root) return;
-    root.innerHTML = '<div id="preview-status"><div><strong>Preview could not start</strong><p></p></div></div>';
-    root.querySelector('p').textContent = message;
-  };
-
-  try {
-    if (typeof DecompressionStream !== 'function') {
-      throw new Error('This browser does not support the decompression API used by this review link. Please open it in a current Chrome, Edge, Firefox, or Safari browser.');
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#090b12" />
+  <meta name="description" content="Ephemera visual review build" />
+  <meta name="referrer" content="no-referrer" />
+  <meta name="robots" content="noindex, nofollow, noarchive" />
+  <title>Ephemera — visual review</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #090b12;
+      --panel: #10131e;
+      --panel-2: #151927;
+      --panel-3: #1a1f30;
+      --line: #252a3b;
+      --line-soft: rgba(255,255,255,.075);
+      --text: #f6f7fb;
+      --muted: #979daf;
+      --muted-2: #71788d;
+      --purple: #9b8cff;
+      --purple-2: #7867f4;
+      --mint: #63e0c1;
+      --danger: #ff7d93;
+      --shadow: 0 22px 70px rgba(0,0,0,.32);
+      --radius: 18px;
     }
 
-    const unpack = async (parts) => {
-      if (!Array.isArray(parts) || parts.length === 0) {
-        throw new Error('A preview asset did not load.');
-      }
-      const data = parts.join('');
-      const bytes = Uint8Array.from(atob(data), (char) => char.charCodeAt(0));
-      const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
-      return new Response(stream).text();
-    };
+    * { box-sizing: border-box; }
+    html { min-height: 100%; background: var(--bg); }
+    body {
+      min-height: 100vh;
+      margin: 0;
+      background:
+        radial-gradient(circle at 48% 16%, rgba(117,96,245,.10), transparent 34rem),
+        radial-gradient(circle at 93% 38%, rgba(70,218,184,.07), transparent 29rem),
+        var(--bg);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
 
-    const [css, source] = await Promise.all([
-      unpack(window.__EPH_CSS || []),
-      unpack(window.__EPH_JS || []),
-    ]);
+    button, input, textarea { font: inherit; }
+    button { color: inherit; }
+    button:focus-visible, input:focus-visible, textarea:focus-visible {
+      outline: 2px solid var(--purple);
+      outline-offset: 2px;
+    }
+    .hidden { display: none !important; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 
-    const style = document.createElement('style');
-    style.textContent = css;
-    document.head.append(style);
+    .brand { display: inline-flex; align-items: center; gap: 11px; font-weight: 760; letter-spacing: -.02em; font-size: 18px; }
+    .brand-mark {
+      width: 29px; height: 29px; border-radius: 10px;
+      display: inline-flex; align-items: flex-end; justify-content: center; gap: 2px;
+      padding: 7px 6px; background: linear-gradient(145deg, #a694ff, #7161ee 68%, #64ddc2);
+      box-shadow: 0 8px 24px rgba(124,105,245,.24);
+    }
+    .brand-mark i { display: block; width: 2px; border-radius: 2px; background: white; }
+    .brand-mark i:nth-child(1) { height: 7px; opacity: .88; }
+    .brand-mark i:nth-child(2) { height: 12px; }
+    .brand-mark i:nth-child(3) { height: 9px; opacity: .88; }
 
-    // The production Vite bundle has no module imports or exports. Running it as
-    // a normal inline script avoids the blob: module restriction imposed by
-    // several raw-file preview hosts.
-    const app = document.createElement('script');
-    app.textContent = source + '\n//# sourceURL=ephemera-production.js';
-    document.head.append(app);
+    .status-dot { width: 8px; height: 8px; border-radius: 99px; background: var(--mint); box-shadow: 0 0 0 4px rgba(99,224,193,.1); }
+    .review-pill {
+      position: fixed; z-index: 90; left: 50%; bottom: 16px; transform: translateX(-50%);
+      display: inline-flex; align-items: center; gap: 8px; border: 1px solid rgba(155,140,255,.25);
+      border-radius: 999px; padding: 8px 12px; background: rgba(17,20,31,.88);
+      box-shadow: 0 10px 35px rgba(0,0,0,.25); backdrop-filter: blur(14px);
+      color: #b9bdd0; font-size: 11px; white-space: nowrap;
+    }
+    .review-pill b { color: #d8d3ff; font-weight: 650; }
 
-    delete window.__EPH_CSS;
-    delete window.__EPH_JS;
-  } catch (error) {
-    console.error(error);
-    showError(error instanceof Error ? error.message : 'An unknown preview error occurred.');
-  }
-})();
-</script>
+    /* Landing */
+    .landing { width: min(1120px, calc(100% - 40px)); min-height: 100vh; margin: 0 auto; display: flex; flex-direction: column; }
+    .landing-nav { height: 82px; border-bottom: 1px solid var(--line-soft); display: flex; align-items: center; justify-content: space-between; }
+    .nav-note { display: flex; align-items: center; gap: 9px; color: #a7adbd; font-size: 12px; }
+    .landing-hero { text-align: center; padding: 126px 20px 57px; }
+    .eyebrow {
+      display: inline-flex; align-items: center; gap: 7px; padding: 7px 11px; border-radius: 999px;
+      border: 1px solid rgba(155,140,255,.25); background: rgba(113,97,238,.09);
+      color: #c2baff; font-size: 11px; font-weight: 760; letter-spacing: .08em; text-transform: uppercase;
+    }
+    .spark { font-size: 15px; line-height: 1; }
+    h1 { margin: 27px auto 20px; max-width: 900px; font-size: clamp(50px, 6.6vw, 82px); line-height: .98; letter-spacing: -.061em; }
+    h1 span { display: block; margin-top: 11px; color: transparent; background: linear-gradient(90deg, #9c88ff 17%, #c0b6ff 46%, #69e0c2 86%); -webkit-background-clip: text; background-clip: text; }
+    .lede { max-width: 670px; margin: 0 auto; color: #b3b7c5; font-size: 17px; line-height: 1.58; }
+    .hero-actions { margin-top: 37px; display: flex; flex-direction: column; align-items: center; gap: 13px; }
+    .hero-actions small { color: #858c9f; font-size: 11px; }
+
+    .button {
+      border: 0; border-radius: 13px; padding: 12px 17px; display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+      cursor: pointer; font-weight: 680; transition: transform .16s ease, border-color .16s ease, background .16s ease, opacity .16s ease;
+    }
+    .button:hover { transform: translateY(-1px); }
+    .button-primary { min-height: 52px; padding: 0 23px; color: #11131c; background: linear-gradient(100deg, #a491ff, #67dfc2); box-shadow: 0 13px 32px rgba(105,217,194,.11); }
+    .button-secondary { border: 1px solid #30364a; background: #1a1f2e; }
+    .button-quiet { border: 1px solid transparent; background: transparent; color: #b3b8c8; }
+    .button-quiet:hover { background: rgba(255,255,255,.045); }
+
+    .join-card {
+      border: 1px solid var(--line); border-radius: var(--radius); padding: 23px; background: rgba(17,20,31,.86); box-shadow: var(--shadow);
+    }
+    .join-intro { display: flex; align-items: center; gap: 13px; margin-bottom: 17px; }
+    .feature-icon, .join-icon, .empty-icon {
+      flex: 0 0 auto; display: grid; place-items: center; width: 39px; height: 39px; border-radius: 12px;
+      border: 1px solid rgba(155,140,255,.18); background: rgba(121,103,244,.11); color: #ad9fff;
+    }
+    .join-intro strong { display: block; font-size: 14px; }
+    .join-intro p { margin: 4px 0 0; color: var(--muted); font-size: 12px; }
+    .join-form { display: grid; grid-template-columns: 1fr auto; gap: 10px; }
+    .input {
+      width: 100%; min-height: 45px; border: 1px solid #242a3a; border-radius: 12px; padding: 0 14px;
+      background: #0a0d14; color: var(--text); font-size: 13px;
+    }
+    .input::placeholder { color: #62697d; }
+    .form-error { min-height: 16px; margin: 9px 2px 0; color: var(--danger); font-size: 11px; }
+
+    .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 18px; }
+    .feature { display: flex; align-items: flex-start; gap: 13px; min-height: 100px; border: 1px solid var(--line); border-radius: 16px; padding: 19px; background: rgba(12,15,23,.77); }
+    .feature-icon { width: 34px; height: 34px; border: 0; border-radius: 10px; }
+    .feature h2 { margin: 1px 0 6px; font-size: 13px; }
+    .feature p { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.55; }
+    .landing-footer { margin-top: auto; min-height: 91px; border-top: 1px solid var(--line-soft); display: flex; align-items: center; justify-content: space-between; color: #70778a; font-size: 10px; }
+
+    /* Room */
+    .room { min-height: 100vh; display: grid; grid-template-rows: 68px 1fr; overflow: hidden; background: #090b12; }
+    .room-header { position: relative; z-index: 30; display: flex; align-items: center; gap: 20px; padding: 0 20px; border-bottom: 1px solid var(--line); background: rgba(9,11,18,.96); }
+    .room-brand { padding-right: 20px; border-right: 1px solid var(--line); }
+    .room-meta { min-width: 0; display: flex; align-items: center; gap: 14px; }
+    .room-title { min-width: 0; }
+    .room-title strong { display: block; max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+    .room-title span { display: block; margin-top: 3px; color: var(--muted); font-size: 10px; }
+    .connection {
+      display: inline-flex; align-items: center; gap: 6px; border: 1px solid #2a3042; border-radius: 999px; padding: 6px 9px;
+      background: #131724; color: #b9becd; font-size: 10px; white-space: nowrap;
+    }
+    .connection i { width: 6px; height: 6px; border-radius: 99px; background: var(--mint); }
+    .header-actions { margin-left: auto; display: flex; align-items: center; gap: 5px; }
+    .header-action { min-height: 38px; padding: 0 11px; border: 1px solid transparent; border-radius: 11px; background: transparent; color: #bac0cf; cursor: pointer; font-size: 11px; }
+    .header-action:hover { background: rgba(255,255,255,.045); }
+    .header-action.accent { border-color: rgba(155,140,255,.22); background: rgba(121,103,244,.11); color: #dedaff; }
+    .encrypted { display: inline-flex; align-items: center; gap: 7px; margin-right: 8px; color: #aeb4c5; font-size: 10px; }
+    .encrypted span { color: var(--mint); }
+
+    .room-body { min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 286px; }
+    .chat { min-width: 0; min-height: 0; display: grid; grid-template-rows: minmax(0,1fr) auto; }
+    .messages { min-height: 0; overflow: auto; padding: 30px max(24px, calc((100% - 790px)/2)); scroll-behavior: smooth; }
+    .empty-state { min-height: 100%; display: grid; place-items: center; text-align: center; }
+    .empty-state-inner { max-width: 430px; transform: translateY(-20px); }
+    .empty-icon { width: 53px; height: 53px; margin: 0 auto 17px; font-size: 22px; }
+    .empty-state h2 { margin: 0 0 9px; font-size: 17px; letter-spacing: -.025em; }
+    .empty-state p { margin: 0 auto; max-width: 410px; color: var(--muted); font-size: 12px; line-height: 1.65; }
+    .sample-button { margin-top: 18px; border: 1px solid #2d3346; border-radius: 11px; padding: 9px 12px; background: #131724; color: #c5cad7; cursor: pointer; font-size: 11px; }
+
+    .message-list { display: flex; flex-direction: column; gap: 17px; padding: 9px 0 30px; }
+    .system-message { align-self: center; color: #747b8f; font-size: 10px; }
+    .message { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 11px; max-width: 620px; }
+    .message.self { align-self: flex-end; grid-template-columns: minmax(0,1fr); }
+    .avatar { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: linear-gradient(145deg,#5864d9,#333a91); color: white; font-size: 10px; font-weight: 760; box-shadow: inset 0 0 0 1px rgba(255,255,255,.12); }
+    .message-head { display: flex; align-items: baseline; gap: 7px; margin-bottom: 6px; }
+    .message-head strong { font-size: 11px; }
+    .message-head time { color: #676e81; font-size: 9px; }
+    .bubble-wrap { position: relative; }
+    .bubble { display: inline-block; max-width: 100%; border: 1px solid #292f41; border-radius: 5px 15px 15px 15px; padding: 11px 13px; background: #151927; color: #e7e9ef; font-size: 12px; line-height: 1.55; word-break: break-word; }
+    .self .bubble-wrap { text-align: right; }
+    .self .bubble { text-align: left; border-color: rgba(155,140,255,.25); border-radius: 15px 5px 15px 15px; background: linear-gradient(135deg, rgba(112,95,226,.33), rgba(41,37,83,.75)); }
+    .reply-quote { margin-bottom: 8px; border-left: 2px solid var(--purple); padding: 5px 8px; border-radius: 5px; background: rgba(0,0,0,.16); color: #aeb3c3; font-size: 10px; }
+    .reply-quote b { display: block; margin-bottom: 2px; color: #d5d0ff; }
+    .message-tools { display: flex; gap: 3px; margin-top: 5px; opacity: .55; }
+    .self .message-tools { justify-content: flex-end; }
+    .tool-button { border: 0; border-radius: 7px; padding: 4px 7px; background: transparent; color: #9299ab; cursor: pointer; font-size: 10px; }
+    .tool-button:hover { background: #181d2b; color: white; }
+    .reactions { display: flex; gap: 4px; margin-top: 5px; }
+    .self .reactions { justify-content: flex-end; }
+    .reaction { border: 1px solid #30364a; border-radius: 999px; padding: 3px 7px; background: #111521; font-size: 10px; }
+    .file-card { display: flex; align-items: center; gap: 11px; min-width: 260px; }
+    .file-icon { width: 37px; height: 37px; border-radius: 10px; display: grid; place-items: center; background: rgba(155,140,255,.13); color: #b3a8ff; font-size: 18px; }
+    .file-card strong { display: block; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; }
+    .file-card span { color: #8c93a5; font-size: 9px; }
+    .typing { display: flex; align-items: center; gap: 6px; margin-left: 45px; color: #858c9e; font-size: 10px; }
+    .typing-dots { display: inline-flex; gap: 3px; }
+    .typing-dots i { width: 4px; height: 4px; border-radius: 50%; background: #8d93a5; animation: pulse 1s infinite ease-in-out; }
+    .typing-dots i:nth-child(2) { animation-delay: .15s; }
+    .typing-dots i:nth-child(3) { animation-delay: .3s; }
+    @keyframes pulse { 0%,70%,100% { opacity: .3; transform: translateY(0); } 35% { opacity: 1; transform: translateY(-2px); } }
+
+    .composer-area { padding: 0 max(24px, calc((100% - 790px)/2)) 14px; background: linear-gradient(transparent, #090b12 23%); }
+    .replying { display: none; align-items: center; justify-content: space-between; gap: 12px; margin: 0 7px 7px; border-left: 2px solid var(--purple); border-radius: 7px; padding: 7px 10px; background: #111521; color: #9da3b5; font-size: 10px; }
+    .replying.active { display: flex; }
+    .replying b { color: #d8d4ff; }
+    .replying button { border: 0; background: none; color: #9da3b5; cursor: pointer; }
+    .composer { display: grid; grid-template-columns: auto auto 1fr auto; align-items: end; gap: 5px; min-height: 57px; border: 1px solid #353b50; border-radius: 16px; padding: 7px; background: #171b28; box-shadow: 0 18px 60px rgba(0,0,0,.26); }
+    .composer-button { width: 41px; height: 41px; border: 0; border-radius: 11px; display: grid; place-items: center; background: transparent; color: #8f96a9; cursor: pointer; font-size: 18px; }
+    .composer-button:hover { background: #202536; color: white; }
+    .composer-button.send { background: #242a3c; color: #6e768b; }
+    .composer-button.send.ready { background: linear-gradient(135deg,#8f7df8,#6858e9); color: white; }
+    .composer textarea { width: 100%; min-height: 41px; max-height: 130px; resize: none; border: 0; outline: 0; padding: 10px 8px; background: transparent; color: var(--text); font-size: 12px; line-height: 1.45; }
+    .composer textarea::placeholder { color: #71788c; }
+    .composer-note { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 8px; color: #656c7f; font-size: 8px; }
+    .composer-note span { color: var(--mint); }
+    .emoji-popover { position: absolute; z-index: 50; left: 56px; bottom: 72px; display: none; grid-template-columns: repeat(6, 34px); gap: 4px; border: 1px solid #2b3144; border-radius: 13px; padding: 8px; background: #161a27; box-shadow: var(--shadow); }
+    .emoji-popover.open { display: grid; }
+    .emoji-popover button { width: 34px; height: 34px; border: 0; border-radius: 8px; background: transparent; cursor: pointer; font-size: 17px; }
+    .emoji-popover button:hover { background: #252a3b; }
+
+    .participants { min-height: 0; display: flex; flex-direction: column; border-left: 1px solid var(--line); background: #0d1018; }
+    .participants-head { padding: 21px 20px 17px; border-bottom: 1px solid var(--line); }
+    .participants-head strong { display: block; font-size: 12px; }
+    .participants-head span { display: block; margin-top: 5px; color: var(--muted); font-size: 9px; }
+    .participant-list { padding: 18px; flex: 1; }
+    .participant { display: flex; align-items: center; gap: 11px; }
+    .participant .avatar { position: relative; }
+    .online-dot { position: absolute; right: -1px; bottom: 0; width: 8px; height: 8px; border: 2px solid #0d1018; border-radius: 50%; background: var(--mint); }
+    .participant strong { display: block; font-size: 11px; }
+    .participant span { display: block; margin-top: 3px; color: #7e8598; font-size: 9px; }
+    .participants-foot { padding: 14px; border-top: 1px solid var(--line); }
+    .privacy-card { display: flex; gap: 10px; border: 1px solid rgba(155,140,255,.2); border-radius: 13px; padding: 12px; background: rgba(121,103,244,.09); }
+    .privacy-card i { width: 28px; height: 28px; flex: 0 0 auto; border-radius: 9px; display: grid; place-items: center; background: rgba(121,103,244,.16); color: #b0a4ff; font-style: normal; }
+    .privacy-card strong { display: block; font-size: 10px; }
+    .privacy-card p { margin: 4px 0 0; color: #8e95a7; font-size: 9px; line-height: 1.45; }
+    .clear-view { width: 100%; margin-top: 8px; border: 0; border-radius: 10px; padding: 10px; background: transparent; color: #9299aa; cursor: pointer; font-size: 10px; }
+    .clear-view:hover { background: rgba(255,255,255,.035); color: white; }
+    .drawer-close, .people-toggle { display: none; }
+
+    .toast { position: fixed; z-index: 100; left: 50%; bottom: 58px; transform: translate(-50%, 15px); opacity: 0; pointer-events: none; border: 1px solid #2b3144; border-radius: 11px; padding: 9px 12px; background: #171b28; color: #d2d5df; box-shadow: var(--shadow); font-size: 11px; transition: .2s ease; }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+    @media (max-width: 820px) {
+      .landing { width: min(100% - 28px, 680px); }
+      .landing-nav { height: 70px; }
+      .landing-hero { padding: 82px 0 42px; }
+      h1 { font-size: clamp(44px, 12vw, 66px); }
+      .features { grid-template-columns: 1fr; }
+      .landing-footer { gap: 20px; }
+      .room-header { gap: 10px; padding: 0 12px; }
+      .room-brand .brand-name { display: none; }
+      .room-brand { padding-right: 11px; }
+      .encrypted, .header-action .label, .header-action.new-room, .header-action.share { display: none; }
+      .header-action { padding: 0 10px; }
+      .people-toggle { display: inline-flex; }
+      .room-title strong { max-width: 180px; }
+      .room-body { grid-template-columns: 1fr; }
+      .participants { position: fixed; z-index: 70; top: 68px; right: 0; bottom: 0; width: min(310px, 88vw); transform: translateX(105%); transition: transform .22s ease; box-shadow: -22px 0 55px rgba(0,0,0,.35); }
+      .participants.open { transform: translateX(0); }
+      .drawer-close { display: block; position: absolute; right: 12px; top: 14px; border: 0; border-radius: 8px; padding: 7px; background: transparent; color: #a6acbc; cursor: pointer; }
+      .messages { padding-inline: 18px; }
+      .composer-area { padding-inline: 14px; }
+      .review-pill { bottom: 9px; }
+    }
+
+    @media (max-width: 540px) {
+      .landing { width: min(100% - 22px, 500px); }
+      .nav-note { font-size: 0; }
+      .nav-note::after { content: "No history"; font-size: 10px; }
+      .landing-hero { padding-top: 65px; }
+      h1 { letter-spacing: -.05em; }
+      .lede { font-size: 15px; }
+      .join-card { padding: 17px; }
+      .join-form { grid-template-columns: 1fr; }
+      .join-form .button { width: 100%; }
+      .landing-footer { flex-direction: column; align-items: flex-start; justify-content: center; padding: 22px 0 60px; }
+      .room-meta { gap: 8px; }
+      .room-title strong { max-width: 125px; }
+      .connection { display: none; }
+      .header-action.copy { display: none; }
+      .messages { padding: 22px 13px; }
+      .message { max-width: 88%; }
+      .composer { grid-template-columns: auto auto 1fr auto; }
+      .composer-button { width: 36px; height: 40px; }
+      .composer textarea { padding-inline: 4px; }
+      .review-pill { max-width: calc(100% - 18px); overflow: hidden; text-overflow: ellipsis; }
+    }
+  </style>
+</head>
+<body>
+  <section id="landing" class="landing">
+    <header class="landing-nav">
+      <div class="brand"><span class="brand-mark"><i></i><i></i><i></i></span><span>Ephemera</span></div>
+      <div class="nav-note"><span class="status-dot"></span>No accounts. No history.</div>
+    </header>
+
+    <main>
+      <section class="landing-hero">
+        <div class="eyebrow"><span class="spark">⌁</span> Browser-to-browser chat</div>
+        <h1>Talk now.<span>Leave nothing behind.</span></h1>
+        <p class="lede">Open a room, share its link, and chat in real time. Messages live only in the tabs that received them—never in a chat database.</p>
+        <div class="hero-actions">
+          <button id="create-room" class="button button-primary">Create a room <span aria-hidden="true">→</span></button>
+          <small>Free-form, anonymous, and temporary.</small>
+        </div>
+      </section>
+
+      <section class="join-card" aria-label="Join an existing room">
+        <div class="join-intro">
+          <span class="join-icon" aria-hidden="true">↗</span>
+          <div><strong>Already have a room link?</strong><p>Paste it below to join with a fresh, anonymous identity.</p></div>
+        </div>
+        <form id="join-form" class="join-form">
+          <label class="sr-only" for="room-link">Room link</label>
+          <input id="room-link" class="input" placeholder="Paste room link" autocomplete="off" spellcheck="false" />
+          <button class="button button-secondary" type="submit">Join room</button>
+        </form>
+        <p id="form-error" class="form-error" role="alert"></p>
+      </section>
+
+      <section class="features" aria-label="Privacy features">
+        <article class="feature"><span class="feature-icon">◫</span><div><h2>Memory only</h2><p>No local storage, message database, or history sync.</p></div></article>
+        <article class="feature"><span class="feature-icon">♙</span><div><h2>End-to-end encrypted</h2><p>Chat content travels over encrypted WebRTC data channels.</p></div></article>
+        <article class="feature"><span class="feature-icon">♧</span><div><h2>Link to join</h2><p>Every room has a unique URL. Anyone holding it can enter.</p></div></article>
+      </section>
+    </main>
+
+    <footer class="landing-footer"><span>Ephemera keeps chat content in open browser memory only.</span><span>Closing or refreshing clears your copy.</span></footer>
+  </section>
+
+  <section id="room" class="room hidden">
+    <header class="room-header">
+      <button id="home-button" class="room-brand button-quiet" aria-label="Return home">
+        <span class="brand"><span class="brand-mark"><i></i><i></i><i></i></span><span class="brand-name">Ephemera</span></span>
+      </button>
+      <div class="room-meta">
+        <div class="room-title"><strong id="room-name">#quiet-island-review</strong><span><b id="online-count">1</b> online</span></div>
+        <span class="connection"><i></i> Preview ready</span>
+      </div>
+      <div class="header-actions">
+        <span class="encrypted"><span>♢</span> End-to-end encrypted</span>
+        <button id="new-room" class="header-action new-room">＋ New room</button>
+        <button id="share-room" class="header-action share">⌯ Share</button>
+        <button id="copy-link" class="header-action accent copy">▣ <span class="label">Copy link</span></button>
+        <button id="people-toggle" class="header-action people-toggle" aria-label="Show participants">♧</button>
+        <button id="leave-room" class="header-action" aria-label="Leave room">↪</button>
+      </div>
+    </header>
+
+    <div class="room-body">
+      <main class="chat">
+        <section id="messages" class="messages" aria-live="polite">
+          <div id="empty-state" class="empty-state">
+            <div class="empty-state-inner">
+              <div class="empty-icon">▱</div>
+              <h2>This room starts here</h2>
+              <p>You will only see messages sent while this tab is connected. Nothing from before you arrived is loaded.</p>
+              <button id="sample-button" class="sample-button">Show sample conversation</button>
+            </div>
+          </div>
+          <div id="message-list" class="message-list hidden"></div>
+        </section>
+
+        <section class="composer-area">
+          <div id="replying" class="replying"><span>Replying to <b id="reply-name">a message</b></span><button id="cancel-reply" aria-label="Cancel reply">×</button></div>
+          <div class="composer">
+            <button id="file-button" class="composer-button" aria-label="Attach file">⌕</button>
+            <button id="emoji-button" class="composer-button" aria-label="Choose emoji">☺</button>
+            <textarea id="message-input" rows="1" maxlength="4000" placeholder="Write a message..."></textarea>
+            <button id="send-button" class="composer-button send" aria-label="Send message">➤</button>
+            <input id="file-input" class="hidden" type="file" />
+            <div id="emoji-popover" class="emoji-popover" aria-label="Emoji picker">
+              <button>❤️</button><button>👍</button><button>😂</button><button>😮</button><button>😢</button><button>🎉</button>
+            </div>
+          </div>
+          <div class="composer-note"><span>♢</span> Encrypted · Messages stay only in open tabs</div>
+        </section>
+      </main>
+
+      <aside id="participants" class="participants">
+        <button id="drawer-close" class="drawer-close" aria-label="Close participants">×</button>
+        <div class="participants-head"><strong>♧ &nbsp; In this room</strong><span><b id="side-count">1</b> online now</span></div>
+        <div id="participant-list" class="participant-list">
+          <div class="participant"><span class="avatar">MK<i class="online-dot"></i></span><div><strong>Mellow Koala · BE</strong><span>You · anonymous</span></div></div>
+        </div>
+        <div class="participants-foot">
+          <div class="privacy-card"><i>♢</i><div><strong>Ephemeral by design</strong><p>Your visible chat exists only in this tab’s memory.</p></div></div>
+          <button id="clear-view" class="clear-view">◇ &nbsp; Clear my view</button>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <div class="review-pill"><span class="status-dot"></span><b>Visual review build</b><span>Networking is disabled on this review URL</span></div>
+  <div id="toast" class="toast" role="status"></div>
+
+  <script>
+    (() => {
+      const $ = (id) => document.getElementById(id);
+      const landing = $('landing');
+      const room = $('room');
+      const messages = $('messages');
+      const emptyState = $('empty-state');
+      const messageList = $('message-list');
+      const input = $('message-input');
+      const sendButton = $('send-button');
+      const emojiPopover = $('emoji-popover');
+      const participants = $('participants');
+      const replying = $('replying');
+      const replyName = $('reply-name');
+      const toast = $('toast');
+      let replyText = '';
+      let sampleLoaded = false;
+      let toastTimer;
+
+      const adjectives = ['quiet','coral','lunar','velvet','mint','silver','amber','cosmic'];
+      const nouns = ['island','harbor','willow','studio','cloud','cove','river','meadow'];
+      const randomRoom = () => `${adjectives[Math.floor(Math.random()*adjectives.length)]}-${nouns[Math.floor(Math.random()*nouns.length)]}-${Math.random().toString(16).slice(2,10)}`;
+      const escapeHtml = (value) => value.replace(/[&<>'"]/g, (char) => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]));
+      const timeNow = () => new Intl.DateTimeFormat(undefined,{hour:'numeric',minute:'2-digit'}).format(new Date());
+
+      const showToast = (text) => {
+        clearTimeout(toastTimer);
+        toast.textContent = text;
+        toast.classList.add('show');
+        toastTimer = setTimeout(() => toast.classList.remove('show'), 1800);
+      };
+
+      const updateRoute = () => {
+        const match = location.hash.match(/^#\/room\/([^/]+)/);
+        if (match) {
+          $('room-name').textContent = `#${decodeURIComponent(match[1])}`;
+          landing.classList.add('hidden');
+          room.classList.remove('hidden');
+          setTimeout(() => input.focus(), 60);
+        } else {
+          room.classList.add('hidden');
+          landing.classList.remove('hidden');
+          participants.classList.remove('open');
+        }
+      };
+
+      const openRoom = (name = randomRoom()) => {
+        location.hash = `#/room/${encodeURIComponent(name)}/review-only`;
+      };
+
+      const ensureList = () => {
+        emptyState.classList.add('hidden');
+        messageList.classList.remove('hidden');
+      };
+
+      const addMessage = ({self=false, name='Bright Fox · QD', initials='BF', text='', quote='', file=null, reactions=[]}) => {
+        ensureList();
+        const article = document.createElement('article');
+        article.className = `message${self ? ' self' : ''}`;
+        const quoteHtml = quote ? `<div class="reply-quote"><b>Replying</b>${escapeHtml(quote)}</div>` : '';
+        const content = file
+          ? `<div class="file-card"><span class="file-icon">▤</span><div><strong>${escapeHtml(file.name)}</strong><span>${escapeHtml(file.size)} · review preview</span></div></div>`
+          : escapeHtml(text).replace(/\n/g,'<br>');
+        const reactionHtml = reactions.length ? `<div class="reactions">${reactions.map((r) => `<span class="reaction">${r}</span>`).join('')}</div>` : '';
+        article.innerHTML = self
+          ? `<div><div class="bubble-wrap"><div class="bubble">${quoteHtml}${content}</div></div><div class="message-tools"><button class="tool-button react">☺ React</button><button class="tool-button reply">↩ Reply</button><span class="tool-button">${timeNow()} · sent</span></div>${reactionHtml}</div>`
+          : `<span class="avatar">${initials}</span><div><div class="message-head"><strong>${escapeHtml(name)}</strong><time>${timeNow()}</time></div><div class="bubble-wrap"><div class="bubble">${quoteHtml}${content}</div></div><div class="message-tools"><button class="tool-button react">☺ React</button><button class="tool-button reply">↩ Reply</button></div>${reactionHtml}</div>`;
+        article.dataset.preview = file ? `Attachment: ${file.name}` : text.slice(0,90);
+        messageList.append(article);
+        messages.scrollTop = messages.scrollHeight;
+      };
+
+      const addTyping = () => {
+        const row = document.createElement('div');
+        row.className = 'typing';
+        row.id = 'typing-row';
+        row.innerHTML = `<span class="typing-dots"><i></i><i></i><i></i></span> Bright Fox is typing`;
+        messageList.append(row);
+        messages.scrollTop = messages.scrollHeight;
+      };
+
+      const loadSample = () => {
+        if (sampleLoaded) return;
+        sampleLoaded = true;
+        ensureList();
+        messageList.innerHTML = '<div class="system-message">Bright Fox joined just now</div>';
+        addMessage({name:'Bright Fox · QD',initials:'BF',text:'Hey! The link worked — I can see the room.'});
+        addMessage({self:true,text:'Perfect. Nothing from before you joined should appear here.'});
+        addMessage({name:'Bright Fox · QD',initials:'BF',text:'Nice. Replies, reactions, and files all fit the same temporary model.',quote:'Nothing from before you joined should appear here.',reactions:['👍 2','🎉 1']});
+        addMessage({self:true,file:{name:'launch-notes.pdf',size:'842 KB'}});
+        addTyping();
+        $('online-count').textContent = $('side-count').textContent = '2';
+        $('participant-list').insertAdjacentHTML('beforeend','<div class="participant" style="margin-top:14px"><span class="avatar" style="background:linear-gradient(145deg,#b061a0,#6b3263)">BF<i class="online-dot"></i></span><div><strong>Bright Fox · QD</strong><span>Anonymous guest</span></div></div>');
+      };
+
+      const send = () => {
+        const text = input.value.trim();
+        if (!text) return;
+        const quote = replyText;
+        addMessage({self:true,text,quote});
+        input.value = '';
+        input.style.height = '';
+        sendButton.classList.remove('ready');
+        replyText = '';
+        replying.classList.remove('active');
+        emojiPopover.classList.remove('open');
+        if (sampleLoaded) {
+          const oldTyping = $('typing-row');
+          if (oldTyping) oldTyping.remove();
+          addTyping();
+          setTimeout(() => {
+            const typing = $('typing-row');
+            if (typing) typing.remove();
+            addMessage({name:'Bright Fox · QD',initials:'BF',text:'Got it — this response is simulated only for the visual review.'});
+          }, 950);
+        }
+      };
+
+      $('create-room').addEventListener('click', () => openRoom());
+      $('new-room').addEventListener('click', () => { messageList.innerHTML=''; sampleLoaded=false; $('online-count').textContent=$('side-count').textContent='1'; openRoom(); });
+      $('home-button').addEventListener('click', () => { history.replaceState(null,'',location.pathname); updateRoute(); });
+      $('leave-room').addEventListener('click', () => { history.replaceState(null,'',location.pathname); updateRoute(); });
+      $('join-form').addEventListener('submit', (event) => {
+        event.preventDefault();
+        const value = $('room-link').value.trim();
+        const match = value.match(/#\/room\/([^/]+)/);
+        if (!match) { $('form-error').textContent = 'Paste a complete Ephemera room link.'; return; }
+        $('form-error').textContent = '';
+        openRoom(decodeURIComponent(match[1]));
+      });
+      $('room-link').addEventListener('input', () => $('form-error').textContent='');
+      $('copy-link').addEventListener('click', async () => {
+        try { await navigator.clipboard.writeText(location.href); showToast('Room link copied'); }
+        catch { showToast('Copy the URL from your address bar'); }
+      });
+      $('share-room').addEventListener('click', async () => {
+        if (navigator.share) { try { await navigator.share({title:'Ephemera room',url:location.href}); } catch {} }
+        else $('copy-link').click();
+      });
+      $('sample-button').addEventListener('click', loadSample);
+      $('clear-view').addEventListener('click', () => {
+        messageList.innerHTML=''; messageList.classList.add('hidden'); emptyState.classList.remove('hidden'); sampleLoaded=false;
+        $('online-count').textContent=$('side-count').textContent='1';
+        const rows = $('participant-list').querySelectorAll('.participant'); rows.forEach((row,index) => { if(index>0) row.remove(); });
+        showToast('Your visible messages were cleared');
+      });
+      $('emoji-button').addEventListener('click', () => emojiPopover.classList.toggle('open'));
+      emojiPopover.addEventListener('click', (event) => {
+        const button = event.target.closest('button'); if (!button) return;
+        input.value += button.textContent; input.dispatchEvent(new Event('input')); input.focus();
+      });
+      input.addEventListener('input', () => {
+        sendButton.classList.toggle('ready', Boolean(input.value.trim()));
+        input.style.height='auto'; input.style.height=Math.min(input.scrollHeight,130)+'px';
+      });
+      input.addEventListener('keydown', (event) => { if (event.key==='Enter' && !event.shiftKey) { event.preventDefault(); send(); } });
+      sendButton.addEventListener('click', send);
+      $('file-button').addEventListener('click', () => $('file-input').click());
+      $('file-input').addEventListener('change', (event) => {
+        const file = event.target.files[0]; if (!file) return;
+        const units = file.size < 1024*1024 ? `${Math.max(1,Math.round(file.size/1024))} KB` : `${(file.size/1024/1024).toFixed(1)} MB`;
+        addMessage({self:true,file:{name:file.name,size:units},quote:replyText});
+        event.target.value=''; replyText=''; replying.classList.remove('active');
+      });
+      messageList.addEventListener('click', (event) => {
+        const message = event.target.closest('.message'); if (!message) return;
+        if (event.target.closest('.reply')) { replyText=message.dataset.preview||'message'; replyName.textContent=replyText.slice(0,45); replying.classList.add('active'); input.focus(); }
+        if (event.target.closest('.react')) {
+          let reactions=message.querySelector('.reactions');
+          if (!reactions) { reactions=document.createElement('div'); reactions.className='reactions'; message.lastElementChild.append(reactions); }
+          reactions.insertAdjacentHTML('beforeend','<span class="reaction">👍 1</span>');
+        }
+      });
+      $('cancel-reply').addEventListener('click', () => { replyText=''; replying.classList.remove('active'); });
+      $('people-toggle').addEventListener('click', () => participants.classList.add('open'));
+      $('drawer-close').addEventListener('click', () => participants.classList.remove('open'));
+      addEventListener('hashchange', updateRoute);
+      updateRoute();
+    })();
+  </script>
 </body>
 </html>
