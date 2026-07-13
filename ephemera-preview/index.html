@@ -8,32 +8,69 @@
 <meta name="referrer" content="no-referrer" />
 <meta name="robots" content="noindex, nofollow, noarchive" />
 <title>Ephemera — temporary browser chat</title>
+<style>
+html,body{margin:0;min-height:100%;background:#090b12;color:#f6f7fb;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+#preview-status{display:grid;min-height:100vh;place-items:center;padding:24px;box-sizing:border-box;text-align:center}
+#preview-status>div{max-width:560px}
+#preview-status strong{display:block;font-size:20px;margin-bottom:8px}
+#preview-status p{margin:0;color:#a8adbd;line-height:1.6}
+</style>
 </head>
 <body>
-<div id="root"></div>
+<div id="root"><div id="preview-status"><div><strong>Loading Ephemera…</strong><p>Preparing the review build.</p></div></div></div>
 <script src="./payload-css-00.js"></script>
 <script src="./payload-js-00.js"></script>
 <script src="./payload-js-01.js"></script>
 <script src="./payload-js-02.js"></script>
 <script src="./payload-js-03.js"></script>
 <script src="./payload-js-04.js"></script>
-<script type="module">
-const unpack = async (parts) => {
-  const data = parts.join('');
-  const bytes = Uint8Array.from(atob(data), (char) => char.charCodeAt(0));
-  const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
-  return new Response(stream).text();
-};
-const css = await unpack(window.__EPH_CSS || []);
-const style = document.createElement('style');
-style.textContent = css;
-document.head.append(style);
-const source = await unpack(window.__EPH_JS || []);
-const moduleUrl = URL.createObjectURL(new Blob([source], { type: 'text/javascript' }));
-await import(moduleUrl);
-URL.revokeObjectURL(moduleUrl);
-delete window.__EPH_CSS;
-delete window.__EPH_JS;
+<script>
+(async () => {
+  const showError = (message) => {
+    const root = document.getElementById('root');
+    if (!root) return;
+    root.innerHTML = '<div id="preview-status"><div><strong>Preview could not start</strong><p></p></div></div>';
+    root.querySelector('p').textContent = message;
+  };
+
+  try {
+    if (typeof DecompressionStream !== 'function') {
+      throw new Error('This browser does not support the decompression API used by this review link. Please open it in a current Chrome, Edge, Firefox, or Safari browser.');
+    }
+
+    const unpack = async (parts) => {
+      if (!Array.isArray(parts) || parts.length === 0) {
+        throw new Error('A preview asset did not load.');
+      }
+      const data = parts.join('');
+      const bytes = Uint8Array.from(atob(data), (char) => char.charCodeAt(0));
+      const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
+      return new Response(stream).text();
+    };
+
+    const [css, source] = await Promise.all([
+      unpack(window.__EPH_CSS || []),
+      unpack(window.__EPH_JS || []),
+    ]);
+
+    const style = document.createElement('style');
+    style.textContent = css;
+    document.head.append(style);
+
+    // The production Vite bundle has no module imports or exports. Running it as
+    // a normal inline script avoids the blob: module restriction imposed by
+    // several raw-file preview hosts.
+    const app = document.createElement('script');
+    app.textContent = source + '\n//# sourceURL=ephemera-production.js';
+    document.head.append(app);
+
+    delete window.__EPH_CSS;
+    delete window.__EPH_JS;
+  } catch (error) {
+    console.error(error);
+    showError(error instanceof Error ? error.message : 'An unknown preview error occurred.');
+  }
+})();
 </script>
 </body>
 </html>
